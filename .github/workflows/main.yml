@@ -18,10 +18,10 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USERNAME: Accel
           HF_SPACE: huggingface.co/spaces/Accel/media-converter
-        run: git remote add space https://$HF_USERNAME:$HF_TOKEN@HF_SPACE
+        run: git remote add space https://$HF_USERNAME:$HF_TOKEN@$HF_SPACE main
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_USERNAME: Accel
           HF_SPACE: huggingface.co/spaces/Accel/media-converter
-        run: git push --force https://$HF_USERNAME:$HF_TOKEN@HF_SPACE main
+        run: git push --force https://$HF_USERNAME:$HF_TOKEN@$HF_SPACE main
