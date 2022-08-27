@@ -8,48 +8,18 @@ from tempfile import _TemporaryFileWrapper
 from ffmpy import FFmpeg
 
 import gradio as gr
-from functions import (Clear, CommandBuilder, change_clipbox, customBitrate, mediaChange,
-                       supported_codecs, supported_presets, updateOutput, videoChange)
+from functions import (Clear, CommandBuilder, audio_channels, audio_codecs,
+                       audio_containers, audio_quality, audio_sample_rates,
+                       change_clipbox, containers, customBitrate, filters,
+                       mediaChange, presets, profiles, speeds,
+                       supported_codecs, supported_presets, updateOutput,
+                       video_aspect_ratio, video_codecs, video_containers,
+                       video_scaling, videoChange,vf)
 
 logging.basicConfig(level=logging.INFO)
 
 choices = ["mp3", "ogg", "flac", "wav"]
 
-
-def parse(param: json) -> dict:
-    with open(param) as file:
-        return json.load(file)
-
-# global inputs,inputs_clip
-data = parse("./data.json")
-
-containers=[j.get("name") for i in data["containers"] for j in data["containers"][i]]
-video_containers = [i.get("name") for i in data["containers"]["video"]]
-video_codecs = [i.get("name") for i in data["codecs"]["video"]]
-video_aspect_ratio = [i.get("name") for i in data["aspects"]]
-video_scaling = [i.get("name") for i in data["scalings"]]
-""" Audio """
-audio_containers = [i.get("name") for i in data["containers"]["audio"]]
-audio_codecs = [i.get("name") for i in data["codecs"]["audio"]]
-audio_channels = [i.get("name") for i in data["audioChannels"]]
-audio_quality = [i.get("name") for i in data["audioQualities"]]
-audio_sample_rates = [i.get("name") for i in data["sampleRates"]]
-
-""" Video & Audio Filters """
-# deband=[i.get("name") for i in data["deband"]]
-# deflicker=[i.get("name") for i in data["deflicker"]]
-# deshake=[i.get("name") for i in data["deshake"]]
-# dejudder=[i.get("name") for i in data["dejudder"]]
-# denoise=[i.get("name") for i in data["denoise"]]
-# deinterlace=[i.get("name") for i in data["deinterlace"]]
-filters = ["deband", "deflicker", "deshake",
-           "dejudder", "denoise", "deinterlace"]
-vf = [{vFilter: names} for vFilter in filters for names in [
-    [i for i in data[vFilter]]]]
-
-presets = [i.get("name") for i in data["presets"]]
-profiles = [i.get("name") for i in data["profiles"]]
-speeds = [i.get("name") for i in data["speeds"]]
 
 logging.info(msg=f"{video_containers}")
 
@@ -92,7 +62,6 @@ def get_component_instance(inputs: gr.Blocks) -> list:
 
 # names=[{x:i} for x in ["audioChannels","audioQualities"] for i in [[i.get("name")  for i in data[x]]]]
 with gr.Blocks(css="./styles.css") as dm:
-    gr.Markdown("Something")
     with gr.Tabs():
         with gr.TabItem("Format"):
             # Input Buttons
@@ -186,7 +155,7 @@ with gr.Blocks(css="./styles.css") as dm:
     ffmpeg_commands.do()
     pprint(ffmpeg_commands.commands)
     ffmpeg_commands.update(output_textbox)
-    file_input.change(fn=updateOutput,inputs=file_input,outputs=output_textbox)
+    # file_input.change(fn=updateOutput,inputs=file_input,outputs=output_textbox)
     clip.change(fn=change_clipbox, inputs=clip,
                 outputs=[start_time, stop_time])
     
