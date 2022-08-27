@@ -1,0 +1,27 @@
+name: Sync to Hugging Face hub
+on:
+  push:
+    branches: [main]
+
+  # to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Add remote 
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: Accel
+          HF_SPACE: huggingface.co/spaces/Accel/media-converter
+        run: git remote add space https://$HF_USERNAME:$HF_TOKEN@HF_SPACE
+      - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: Accel
+          HF_SPACE: huggingface.co/spaces/Accel/media-converter
+        run: git push --force https://noahgift:$HF@huggingface.co/spaces/noahgift/demo main
