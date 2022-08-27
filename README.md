@@ -10,6 +10,7 @@ tags : ["ffmpeg","converter","media","processing"]
 pinned: true
 license: mit
 ---
+[![Sync to Hugging Face hub](https://github.com/lazarusking/gradio-ffmpeg/actions/workflows/main.yml/badge.svg)](https://github.com/lazarusking/gradio-ffmpeg/actions/workflows/main.yml)
 
 # Overview 
 Simple gradio interface for ffmpeg filters and codecs
