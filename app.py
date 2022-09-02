@@ -1,6 +1,4 @@
-import json
 import logging
-import os
 import subprocess
 from pprint import pprint
 from tempfile import _TemporaryFileWrapper
@@ -9,12 +7,9 @@ from ffmpy import FFmpeg
 
 import gradio as gr
 from functions import (Clear, CommandBuilder, audio_channels, audio_codecs,
-                       audio_containers, audio_quality, audio_sample_rates,
-                       change_clipbox, containers, customBitrate, filters,
-                       mediaChange, presets, profiles, speeds,
-                       supported_codecs, supported_presets, updateOutput,
-                       video_aspect_ratio, video_codecs, video_containers,
-                       video_scaling, videoChange,vf)
+                       audio_quality, audio_sample_rates,
+                       change_clipbox, containers, customBitrate, mediaChange, presets, supported_codecs, supported_presets, video_codecs, video_containers,
+                       vf)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -43,24 +38,16 @@ def convert(file: _TemporaryFileWrapper, options: str):
         stdout, stderr=ffmpeg.run(stderr=subprocess.PIPE)
         logging.info(f"{stdout} {stderr}")
         output=f"{ffmpeg.cmd}"
-        video=gr.update(label=output_file,value=output_file)
+        # video=gr.update(label=output_file,value=output_file)
 
     except Exception as e:
         stderr=e
         output=f"{ffmpeg.cmd} {stderr}"
+        return [None,None,None,output]
 
-    return [output_file,output_file,video,output]
-
-
-
-"""Helper Functions for Processing """
+    return [output_file,output_file,output_file,output]
 
 
-
-def get_component_instance(inputs: gr.Blocks) -> list:
-    return [gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i,"children")]
-
-# names=[{x:i} for x in ["audioChannels","audioQualities"] for i in [[i.get("name")  for i in data[x]]]]
 with gr.Blocks(css="./styles.css") as dm:
     with gr.Tabs():
         with gr.TabItem("Format"):
@@ -70,14 +57,14 @@ with gr.Blocks(css="./styles.css") as dm:
                     file_input = gr.File()
                     options = gr.Radio(
                         label="options", choices=containers,value=containers[0])
-
-                    with gr.Row() as inputs_clip:
+                    with gr.Row():
                         clip = gr.Dropdown(
                             choices=["None", "Enabled"], label="Clip:", value="None")
-                        start_time = gr.Textbox(
-                            label="Start Time:", placeholder="00:00", visible=False)
-                        stop_time = gr.Textbox(
-                            label="Stop Time:", placeholder="00:00", visible=False)
+                        with gr.Row() as inputs_clip:
+                            start_time = gr.Textbox(
+                                label="Start Time:", placeholder="00:00", visible=False)
+                            stop_time = gr.Textbox(
+                                label="Stop Time:", placeholder="00:00", visible=False)
                     with gr.Row().style(mobile_collapse=False):
                         clearBtn = gr.Button("Clear")
                         convertBtn = gr.Button("Convert", variant="primary")
@@ -92,7 +79,8 @@ with gr.Blocks(css="./styles.css") as dm:
                     media_output_audio = gr.Audio(label="Output",visible=True,interactive=False,source="filepath")
                     media_output_video = gr.Video(label="Output",visible=False,format="mp4")
                     media_output_file = gr.File(label="Output",visible=False)
-                    output_textbox = gr.Textbox(elem_id="outputtext")
+                    with gr.Row() as command_output:
+                        output_textbox = gr.JSON(elem_id="outputtext")
                 
                 resetFormat=Clear(inputs,inputs_clip)
                 clearBtn.click(resetFormat.clear, inputs=resetFormat(), outputs=resetFormat())
@@ -132,7 +120,7 @@ with gr.Blocks(css="./styles.css") as dm:
 
         with gr.TabItem("Filters") as filter_inputs:
             gr.Markdown("## Video")
-            with gr.Row().style(equal_height=True,mobile_collapse=False) as filter_inputs:
+            with gr.Row().style(equal_height=True) as filter_inputs:
                 for i in vf:
                     # print(i.values())
                     # values = list(i.values())
@@ -152,8 +140,10 @@ with gr.Blocks(css="./styles.css") as dm:
     
     """ Format Tab change functions"""
     ffmpeg_commands=CommandBuilder(inputs_clip,video_inputs,audio_inputs,filter_inputs,filter_inputs_1)
-    ffmpeg_commands.do()
+    # ffmpeg_commands.do()
+    dm.load(fn=ffmpeg_commands.reset,inputs=[],outputs=[])
     pprint(ffmpeg_commands.commands)
+    state=gr.Variable()
     ffmpeg_commands.update(output_textbox)
     # file_input.change(fn=updateOutput,inputs=file_input,outputs=output_textbox)
     clip.change(fn=change_clipbox, inputs=clip,
@@ -170,5 +160,6 @@ with gr.Blocks(css="./styles.css") as dm:
     video_options.change(supported_presets,[video_options],[preset_options])
     """Audio Tab change functions"""
     audio_bitrate.change(customBitrate,[audio_bitrate],[custom_bitrate])
-    
-dm.launch()
+
+if __name__=='__main__':
+    dm.launch()

@@ -1,0 +1,68 @@
+{
+    "vf": {
+        "deband": "deband",
+        "deshake": "deshake",
+        "deflicker": "deflicker",
+        "dejudder": "dejudder",
+        "denoise": {
+            "light": "removegrain=22",
+            "medium": "vaguedenoiser=threshold=3:method=soft:nsteps=5",
+            "heavy": "vaguedenoiser=threshold=6:method=soft:nsteps=5",
+            "default": "removegrain=0"
+        },
+        "deinterlace": {
+            "frame": "yadif=0:-1:0",
+            "field": "yadif=1:-1:0",
+            "frame_nospatial": "yadif=2:-1:0",
+            "field_nospatial": "yadif=3:-1:0"
+        }
+    },
+    "af": {
+        "acontrast": 0
+    },
+    "protocols": "",
+    "startTime": "-ss",
+    "stopTime": "-to",
+
+    "video": "-c:v",
+    "audio": "-c:a",
+    "bitrate": "-b:v",
+    "minrate": "-minrate",
+    "maxrate": "-maxrate",
+    "bufsize": "-bufsize",
+    "gopsize": "-g",
+    "pixelFormat": "-pix_fmt",
+
+    "containers": {
+        "video": "-c:v",
+        "audio": "-c:a"
+    },
+    "clipping": {
+        "startTime": "-ss",
+        "stopTime": "-to"
+    },
+    "codecs": "",
+    "presets": "-preset",
+    "passOptions": "-pass",
+    "pixelformats": "",
+    "frameRates": "-r",
+    "speeds": "",
+    "tunes": "-tune",
+    "profiles": "-profile:v",
+    "levels": "",
+    "fastStart": "-movflags",
+    "sizes": "",
+    "formats": "",
+    "aspects": "-aspect",
+    "scalings": "",
+
+
+    "audioStreams": "",
+    "audioChannels": "-ac",
+    "audioQualities": "-b:a",
+    "sampleRates": "-ar",
+
+
+    "extraOptions": "",
+    "logLevels": ""
+}
