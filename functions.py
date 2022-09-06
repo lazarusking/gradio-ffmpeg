@@ -106,7 +106,6 @@ class CommandBuilder():
         label += "".join(_).title()
         key = newoutputMap.get(label)
         lst_extra, vf, af = ([] for _ in range(3))
-
         if newValue not in [None, "Source", "Auto", "", "None", "none", 0]:
             self.setVf(label, newValue)
             self.setAf(label, newValue)
@@ -157,7 +156,11 @@ class CommandBuilder():
         """
         if newoutputMap.get(label):
             key = newoutputMap.get(label)
-            if label in ["video", "audio", "startTime", "stopTime"]:
+            if label in ["video", "audio"]:
+                value=codecs.get(label).get(newValue,newValue)
+                print(value)
+                self.outputDict.update({key:value})
+            elif label in ["startTime", "stopTime"]:
                 self.outputDict.update({key: newValue})
             else:
                 value = "".join([i.get("value", "None") for i in data.get(
@@ -357,7 +360,7 @@ def mediaChange(option:str)-> List[Component]:
 
 def customBitrate(choice:int)-> Component:
     """
-        Toggle acomponent for custom Audio Quality 
+        Toggle a component for custom Audio Quality 
         visible/none
     Args:
         choice : Custom audio quality

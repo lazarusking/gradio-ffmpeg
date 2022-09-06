@@ -17,7 +17,9 @@
         "dts": "dca",
         "ac3": "ac3",
         "vorbis": "libvorbis",
-        "opus": "libopus"
+        "opus": "libopus",
+        "lame":"libmp3lame",
+        "pcm":"pcm_s16le"
     },
     "copy": "copy"
 }

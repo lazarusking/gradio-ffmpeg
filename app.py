@@ -13,8 +13,6 @@ from functions import (Clear, CommandBuilder, audio_channels, audio_codecs,
 
 logging.basicConfig(level=logging.INFO)
 
-choices = ["mp3", "ogg", "flac", "wav"]
-
 
 logging.info(msg=f"{video_containers}")
 
@@ -35,14 +33,14 @@ def convert(file: _TemporaryFileWrapper, options: str):
         print(ffmpeg)
         print(ffmpeg.cmd)
 
-        stdout, stderr=ffmpeg.run(stderr=subprocess.PIPE)
-        logging.info(f"{stdout} {stderr}")
+        ffmpeg.run(stderr=subprocess.PIPE)
+        # pprint(f"{stdout} {stderr}")
         output=f"{ffmpeg.cmd}"
         # video=gr.update(label=output_file,value=output_file)
 
     except Exception as e:
         stderr=e
-        output=f"{ffmpeg.cmd} {stderr}"
+        output=f"{stderr}"
         return [None,None,None,output]
 
     return [output_file,output_file,output_file,output]
@@ -80,7 +78,7 @@ with gr.Blocks(css="./styles.css") as dm:
                     media_output_video = gr.Video(label="Output",visible=False,format="mp4")
                     media_output_file = gr.File(label="Output",visible=False)
                     with gr.Row() as command_output:
-                        output_textbox = gr.JSON(elem_id="outputtext")
+                        output_textbox = gr.Textbox(elem_id="outputtext")
                 
                 resetFormat=Clear(inputs,inputs_clip)
                 clearBtn.click(resetFormat.clear, inputs=resetFormat(), outputs=resetFormat())
@@ -143,7 +141,6 @@ with gr.Blocks(css="./styles.css") as dm:
     # ffmpeg_commands.do()
     dm.load(fn=ffmpeg_commands.reset,inputs=[],outputs=[])
     pprint(ffmpeg_commands.commands)
-    state=gr.Variable()
     ffmpeg_commands.update(output_textbox)
     # file_input.change(fn=updateOutput,inputs=file_input,outputs=output_textbox)
     clip.change(fn=change_clipbox, inputs=clip,

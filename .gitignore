@@ -2,4 +2,5 @@ __pycache__/
 *.pyc
 flagged/
 .venv
+docs/
 requirements.txt
