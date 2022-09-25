@@ -77,7 +77,7 @@ with gr.Blocks(css="./styles.css") as dm:
                         audio_button=gr.Button("Audio")
                         file_button=gr.Button("File")
                     media_output_audio = gr.Audio(type="filepath",label="Output",visible=True,interactive=False,source="filepath")
-                    media_output_video = gr.Video(label="Output",visible=False,format="mp4")
+                    media_output_video = gr.Video(label="Output",visible=False)
                     media_output_file = gr.File(label="Output",visible=False)
                     with gr.Row() as command_output:
                         output_textbox = gr.Textbox(label="command",elem_id="outputtext")
