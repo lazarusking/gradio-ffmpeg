@@ -1,6 +1,9 @@
 #outputtext {
   color: green;
 }
-#aconstrast {
+#acontrast {
   width: 50%;
+}
+#button{
+  width: 30%
 }

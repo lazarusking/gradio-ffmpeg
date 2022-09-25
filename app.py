@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 logging.info(msg=f"{video_containers}")
 
 
-def convert(file: _TemporaryFileWrapper, options: str):
+def convert(file: _TemporaryFileWrapper, options: str,state):
     stderr=""
     stdout=""
     output_file=""
@@ -43,7 +43,9 @@ def convert(file: _TemporaryFileWrapper, options: str):
         output=f"{stderr}"
         return [None,None,None,output]
 
-    return [output_file,output_file,output_file,output]
+    state=output_file    
+
+    return [output_file,output_file,output_file,output,state]
 
 
 with gr.Blocks(css="./styles.css") as dm:
@@ -56,34 +58,37 @@ with gr.Blocks(css="./styles.css") as dm:
                     options = gr.Radio(
                         label="options", choices=containers,value=containers[0])
                     with gr.Row():
-                        clip = gr.Dropdown(
-                            choices=["None", "Enabled"], label="Clip:", value="None")
                         with gr.Row() as inputs_clip:
+                            clip = gr.Dropdown(
+                                choices=["None", "Enabled"], label="Clip:", value="None")
                             start_time = gr.Textbox(
-                                label="Start Time:", placeholder="00:00", visible=False)
+                                label="Start Time:", placeholder="00:00", visible=False,interactive=True)
                             stop_time = gr.Textbox(
                                 label="Stop Time:", placeholder="00:00", visible=False)
-                    with gr.Row().style(mobile_collapse=False):
+                    with gr.Row():
                         clearBtn = gr.Button("Clear")
                         convertBtn = gr.Button("Convert", variant="primary")
 
                 # Output Buttons
                 with gr.Column():
                     # media_output = gr.Audio(label="Output")
-                    with gr.Row().style(mobile_collapse=False):
+                    with gr.Row():
                         video_button=gr.Button("Video")
                         audio_button=gr.Button("Audio")
                         file_button=gr.Button("File")
-                    media_output_audio = gr.Audio(label="Output",visible=True,interactive=False,source="filepath")
+                    media_output_audio = gr.Audio(type="filepath",label="Output",visible=True,interactive=False,source="filepath")
                     media_output_video = gr.Video(label="Output",visible=False,format="mp4")
                     media_output_file = gr.File(label="Output",visible=False)
                     with gr.Row() as command_output:
-                        output_textbox = gr.Textbox(elem_id="outputtext")
+                        output_textbox = gr.Textbox(label="command",elem_id="outputtext")
                 
                 resetFormat=Clear(inputs,inputs_clip)
+                print(inputs_clip.children)
+                print(resetFormat)
+                state=gr.Variable()
                 clearBtn.click(resetFormat.clear, inputs=resetFormat(), outputs=resetFormat())
-                convertBtn.click(convert, inputs=[file_input, options], outputs=[
-                    media_output_audio,media_output_file,media_output_video, output_textbox])
+                convertBtn.click(convert, inputs=[file_input, options,state], outputs=[
+                    media_output_audio,media_output_file,media_output_video, output_textbox,state])
 
         with gr.TabItem("Video"):
             with gr.Row() as video_inputs:
@@ -92,13 +97,14 @@ with gr.Blocks(css="./styles.css") as dm:
                 preset_options = gr.Dropdown(choices=presets, label="presets",value=presets[-1])
 
 
-            with gr.Column():
-                clearBtn = gr.Button("Clear")
+            with gr.Row(elem_id="button"):
+                with gr.Column():
+                    clearBtn = gr.Button("Clear")
             videoReset=Clear(video_inputs)
             clearBtn.click(videoReset.clear, videoReset(), videoReset())
 
         with gr.TabItem("Audio"):
-            with gr.Row().style(mobile_collapse=False) as audio_inputs:
+            with gr.Row() as audio_inputs:
                 # print(names[0])
                 audio_options = gr.Dropdown(
                     label="audio", choices=audio_codecs, value=audio_codecs[-1])
@@ -111,7 +117,7 @@ with gr.Blocks(css="./styles.css") as dm:
                             label="Sample Rates", value=audio_sample_rates[0])
 
 
-            with gr.Column():
+            with gr.Column(elem_id="button"):
                 clearBtn = gr.Button("Clear")
             audioReset=Clear(audio_inputs)
             clearBtn.click(audioReset.clear, audioReset(), audioReset())
@@ -127,10 +133,10 @@ with gr.Blocks(css="./styles.css") as dm:
                     a=gr.Dropdown(label=list(i.keys()),
                                 choices=choices, value=choices[0])
             gr.Markdown("## Audio")
-            with gr.Row() as filter_inputs_1:
-                acontrastSlider=gr.Slider(label="Acontrast", elem_id="aconstrast")
+            with gr.Row(elem_id="acontrast") as filter_inputs_1:
+                acontrastSlider=gr.Slider(label="Acontrast", elem_id="acontrast")
 
-            with gr.Column():
+            with gr.Column(elem_id="button"):
                 clearBtn = gr.Button("Clear")
 
             filterReset=Clear(filter_inputs,filter_inputs_1)
@@ -149,10 +155,10 @@ with gr.Blocks(css="./styles.css") as dm:
     options.change(supported_codecs,[options],[video_options,audio_options])
     # options.change(mediaChange,[options],[media_output_audio,media_output_video])
     # video_button.click(fn=videoChange,inputs=media_output_file,outputs=media_output_video)
-    audio_button.click(mediaChange,[audio_button],[media_output_audio,media_output_video,media_output_file])
-    video_button.click(mediaChange,[video_button],[media_output_audio,media_output_video,media_output_file])
+    audio_button.click(mediaChange,[audio_button,state],[media_output_audio,media_output_video,media_output_file])
+    video_button.click(mediaChange,[video_button,state],[media_output_audio,media_output_video,media_output_file])
     # media_output_audio.change(lambda x:gr.update(value=x),[media_output_audio],[media_output_video])
-    file_button.click(mediaChange,[file_button],[media_output_audio,media_output_video,media_output_file])
+    file_button.click(mediaChange,[file_button,state],[media_output_audio,media_output_video,media_output_file])
     """Video Tab change functions"""
     video_options.change(supported_presets,[video_options],[preset_options])
     """Audio Tab change functions"""
