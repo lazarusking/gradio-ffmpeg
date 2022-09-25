@@ -189,7 +189,18 @@ class CommandBuilder():
         Parameters:
             inputs: layout block
         """
-        return [gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i, "children")]
+        res=[]
+        for i in inputs.children:
+            # print(i,hasattr(i,"children"))
+            if not (hasattr(i,"children")):
+                # res.append(gr.components.get_component_instance(i,render=True))
+                res+=[gr.components.get_component_instance(i,render=True)]
+                # print(res)
+            elif hasattr(i,"children"):
+                res+=self._get_component_instance(i)
+        # print(res)
+        return res
+        # return [gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i, "children")]
 
     def setVideoFilters(self, options):
         value = self.outputDict.get(options, "-")
@@ -310,7 +321,7 @@ class CommandBuilder():
 #         return [no_,no_]
 
 
-def mediaChange(option:str)-> List[Component]:
+def mediaChange(option:str,state)-> List[Component]:
     """
         Allows playing the media in various options,
         Video, Audio or File
@@ -321,9 +332,9 @@ def mediaChange(option:str)-> List[Component]:
     Returns:
         List[Component]: list of toggled output components to display
     """
-    ops = {"Audio": gr.update(visible=True)}
-    ops2 = {"Video": gr.update(visible=True)}
-    ops3 = {"File": gr.update(visible=True, interactive=False)}
+    ops = {"Audio": gr.update(visible=True,value=state)}
+    ops2 = {"Video": gr.update(visible=True,value=state)}
+    ops3 = {"File": gr.update(visible=True,value=state, interactive=False)}
 
     def chosen(x): return x.get(option, gr.update(visible=False))
     return [chosen(ops), chosen(ops2), chosen(ops3)]
@@ -466,20 +477,27 @@ class Clear(CommandBuilder):
         self._component = []
         if input_component is not None:
             for i in input_component:
-                self._component += super()._get_component_instance(i)
+                # self._component += super()._get_component_instance(i)
+                self._component += self.__get_component_instance(i)
 
-    # def __get_component_instance(self, inputs: gr.Blocks) -> list:
-    #     # print(inputs, " class instance")
-    #     # res=[]
-    #     # for i in inputs.children:
-    #     #     print(hasattr(i,"children"))
-    #     #     if not (hasattr(i,"children")):
-    #     #         res.append(gr.components.get_component_instance(i,render=True))
-    #     #         print(i)
-    #     #     elif hasattr(i,"children"):
-    #     #         continue
-    #     # return res
-    #     return [gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i, "children")]
+    def __get_component_instance(self, inputs: gr.Blocks) -> list:
+        # print(inputs, " class instance")
+        res=[]
+        # print(*inputs.children)
+        for i in inputs.children:
+            # print(i,hasattr(i,"children"))
+            if not (hasattr(i,"children")):
+                # res.append(gr.components.get_component_instance(i,render=True))
+                res+=[gr.components.get_component_instance(i,render=True)]
+                # print(i)
+            elif hasattr(i,"children"):
+                # print(*i.children)
+                res+=self.__get_component_instance(i)
+                # res=[gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i, "children")]
+                # print(res,"__ result")
+        # print(res)
+        return res
+        # return [gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i, "children")]
 
     def add(self, *args):
         print(args, type(args))
