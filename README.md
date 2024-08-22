@@ -4,7 +4,7 @@ emoji: 🔥
 colorFrom: blue
 colorTo: green
 sdk: gradio
-sdk_version: 3.3.1
+sdk_version: 4.41.0
 app_file: app.py
 tags : ["ffmpeg","converter","media","processing"]
 pinned: true
