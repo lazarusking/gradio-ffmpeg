@@ -10,8 +10,8 @@ import gradio as gr
 from gradio.components import Component
 
 
-def parse(param: json) -> dict:
-    with open(param) as file:
+def parse(param: str) -> dict:
+    with open(param, encoding="utf-8") as file:
         return json.load(file)
 
 
@@ -38,8 +38,8 @@ audio_sample_rates = [i.get("name") for i in data["sampleRates"]]
 # dejudder=[i.get("name") for i in data["dejudder"]]
 # denoise=[i.get("name") for i in data["denoise"]]
 # deinterlace=[i.get("name") for i in data["deinterlace"]]
-filters = ["deband", "deflicker", "deshake", "dejudder", "denoise", "deinterlace"]
-vf = [{vFilter: names} for vFilter in filters for names in [[i for i in data[vFilter]]]]
+video_filters = ["deband", "deflicker", "deshake", "dejudder", "denoise", "deinterlace"]
+VF = [{vFilter: names} for vFilter in video_filters for names in [list(data[vFilter])]]
 
 presets = [i.get("name") for i in data["presets"]]
 profiles = [i.get("name") for i in data["profiles"]]
@@ -64,21 +64,28 @@ class CommandBuilder:
     def do(self, *inputs, **kwds):
         for comp in self._component:
             if comp.label is not None:
-                self.changefunc(comp, "", comp.value)
+                # self.changefunc(comp, comp.value)
+                # print(
+                #     comp.label,
+                #     comp,
+                # )
+                comp.change(
+                    fn=self.changefunc, inputs=[gr.State(comp.label), comp], outputs=[]
+                )
 
     def reset(self):
-        self.outputDict = {"vf": {}, "af": {}}
+        self.output_dict = {"vf": {}, "af": {}}
         self.commands = ""
         self.vf, self.af, self.extra = ([] for _ in range(3))
 
-    def __init__(self, *inputs: gr.Blocks) -> None:
+    def __init__(self, *inputs: gr.Row | gr.Column) -> None:
         """
         Parameters:
             *inputs: A tuple of layout blocks containing components(Textbox,Button...).
         """
 
-        self.outputDict = {"vf": {}, "af": {}}
-        self.formatOutputDict = {"vf": {}, "af": {}}
+        self.output_dict = {"vf": {}, "af": {}}
+        self.formatoutputdict = {"vf": {}, "af": {}}
         # state=gr.Variable()
         # state2=gr.Variable()
 
@@ -89,52 +96,55 @@ class CommandBuilder:
             return None
         for i in inputs:
             self._component += self._get_component_instance(i)
-        for comp in self._component:
-            state = gr.State()
-            state2 = gr.State()
-            if comp.label is not None:
-                state.value = comp
-                state2.value = comp.label
-                comp.change(
-                    fn=self.changefunc, inputs=[state, state2, comp], outputs=[]
-                )
+        # print(self._component, "component")
+        # print(len(self._component), "length")
+        # for comp in self._component:
+        #     state = gr.State()
+        #     if comp.label is not None:
+        #         state.value = comp.label
+        #         comp.change(fn=self.changefunc, inputs=[state, comp], outputs=[])
+        # self.changefunc(state.value, comp.value)
+        # comp.change(fn=self.changefunc, inputs=[state, comp], outputs=[])
 
-    def changefunc(self, input: gr.components.Component, c_label="", newValue=""):
+    def changefunc(self, component_label: str | None, new_value=""):
+        print(component_label, "typaaaaaaaa", new_value)
         label, *_ = (
-            input.label.strip(": \n").lower().split()
-            if not isinstance(input.label, list)
-            else "".join(input.label).strip(": ").lower().split()
+            component_label.strip(": \n").lower().split()
+            if component_label
+            else ""
+            if not isinstance(component_label, list)
+            else "".join(component_label).strip(": ").lower().split()
         )
         label += "".join(_).title()
         key = newoutputMap.get(label)
         lst_extra, vf, af = ([] for _ in range(3))
-        if newValue not in [None, "Source", "Auto", "", "None", "none", 0]:
-            self.setVf(label, newValue)
-            self.setAf(label, newValue)
-            self.setF(label, newValue)
-            for val in self.outputDict:
+        if new_value not in [None, "Source", "Auto", "", "None", "none", 0]:
+            self.set_vf(label, new_value)
+            self.set_af(label, new_value)
+            self.set_f(label, new_value)
+            for val in self.output_dict:
                 if val == "vf":
-                    vf = self.outputDict.get(val).values()
+                    vf = self.output_dict.get(val, {}).values()
                     vf = ",".join(list(vf))
                 elif val == "af":
-                    af = self.outputDict.get(val).values()
+                    af = self.output_dict.get(val, {}).values()
                     af = ",".join(list(af))
-                    pass
                 else:
-                    lst_extra.extend([val, self.outputDict.get(val)])
+                    lst_extra.extend([val, self.output_dict.get(val)])
 
         else:
-            self.outputDict.pop(key, "No Key Exists")
-            self.outputDict["vf"].pop(label, "No Key Exists")
-            self.outputDict["af"].pop(label, "No Key Exists")
+            self.output_dict.pop(key, "No Key Exists")
+            self.output_dict["vf"].pop(label, "No Key Exists")
+            self.output_dict["af"].pop(label, "No Key Exists")
         self.vf = f"-vf '{vf}'" if vf else ""
         self.af = f"-af '{af}'" if af else ""
         self.extra = " ".join(lst_extra)
         self.commands = f"{self.vf} {self.af} {self.extra}"
 
-        print(self.vf, self.af, self.extra)
+        print(label, self.vf, self.af, self.extra)
+        print(self.output_dict, "out")
 
-    def setVf(self, label: str, newValue: "str| int"):
+    def set_vf(self, label: str, new_value: "str| int"):
         """Sets Video filters
 
         Args:
@@ -144,13 +154,13 @@ class CommandBuilder:
         if newoutputMap["vf"].get(label):
             key = newoutputMap["vf"].get(label)
             if label in ["deinterlace", "denoise"]:
-                value = "_".join(newValue.lower().split())
+                value = "_".join(str(new_value).lower().split())
                 arg = key.get(value, None)
-                self.outputDict["vf"].update({label: arg})
+                self.output_dict["vf"].update({label: arg})
             else:
-                self.outputDict["vf"].update({key: key})
+                self.output_dict["vf"].update({key: key})
 
-    def setF(self, label, newValue):
+    def set_f(self, label, new_value):
         """Sets Extra filters
         Args:
             label : label of components
@@ -159,38 +169,46 @@ class CommandBuilder:
         if newoutputMap.get(label):
             key = newoutputMap.get(label)
             if label in ["video", "audio"]:
-                value = codecs.get(label).get(newValue, newValue)
+                codec_label = codecs.get(label)
+                value = (
+                    codec_label.get(new_value, new_value) if codec_label else new_value
+                )
                 print(value)
-                self.outputDict.update({key: value})
+                self.output_dict.update({key: value})
             elif label in ["startTime", "stopTime"]:
-                self.outputDict.update({key: newValue})
+                self.output_dict.update({key: new_value})
             else:
                 value = "".join(
                     [
                         i.get("value", "None")
                         for i in data.get(label)
-                        if i.get("name", None) == newValue
+                        if i.get("name", None) == new_value
                     ]
                 )
-                self.outputDict.update({key: value})
+                self.output_dict.update({key: value})
 
-    def setAf(self, label: str, newValue: "str|int"):
-        """Sets Extra filters
+    def set_af(self, label: str, new_value: "str|int"):
+        """Sets Audio filters
         Args:
             label : label of components
             newValue : value of component
         """
         if newoutputMap["af"].get(label):
-            value = int(newValue) / 100
+            value = int(new_value) / 100
             arg = f"{label}={value}"
-            self.outputDict["af"].update({label: arg})
+            self.output_dict["af"].update({label: arg})
 
-    def update(self, Component: Component):
+    def update(self, component: Component):
         for comp in self._component:
-            print(comp, "comp")
-            comp.change(lambda: gr.update(value=self.outputDict), [], [Component])
+            # print(comp, "comp")
+            comp.change(
+                lambda: gr.Textbox(value=self.output_dict),
+                [],
+                [component],
+                trigger_mode="once",
+            )
 
-    def _get_component_instance(self, inputs: gr.Blocks) -> List[Component]:
+    def _get_component_instance(self, inputs: gr.Row | gr.Column) -> List[Component]:
         """
         returns components present in a layout block
         Parameters:
@@ -199,45 +217,55 @@ class CommandBuilder:
         res = []
         for i in inputs.children:
             # print(i,hasattr(i,"children"))
-            if not (hasattr(i, "children")):
+            # print(
+            #     type(i),
+            #     "type",
+            #     # isinstance(i, gr.components.Component),
+            #     # isinstance(i, gr.Blocks),
+            #     hasattr(i, "children"),
+            # )
+            if not hasattr(i, "children"):
                 # res.append(gr.components.get_component_instance(i,render=True))
+                # if isinstance(i, gr.components.Component):
+                # print(gr.components.get_component_instance(i, render=True))
                 res += [gr.components.get_component_instance(i, render=True)]
-                # print(res)
+            # print(res)
             elif hasattr(i, "children"):
+                # if isinstance(i, gr.Blocks):
                 res += self._get_component_instance(i)
         # print(res)
         return res
         # return [gr.components.get_component_instance(i, render=True) for i in inputs.children if not hasattr(i, "children")]
 
-    def setVideoFilters(self, options):
-        value = self.outputDict.get(options, "-")
+    def set_video_filters(self, options):
+        value = self.output_dict.get(options, "-")
         filters = newoutputMap.get(options, None)
         arg = ""
         if options in ["deinterlace", "denoise"]:
             value = "_".join(value.lower().split())
             arg = filters.get(value, None)
             # self.vf.append(arg)
-            self.outputDict["vf"].update({options: arg})
+            self.output_dict["vf"].update({options: arg})
             return True
         if options in ["deband", "deflicker", "deshake", "dejudder"]:
             arg = filters
-            self.outputDict["vf"].update({options: arg})
+            self.output_dict["vf"].update({options: arg})
             return True
 
-        return
+        return False
 
-    def setAudioFilters(self, options):
-        value = self.outputDict.get(options, "-")
+    def set_audio_filters(self, options):
+        value = self.output_dict.get(options, "-")
         if options in ["acontrast"]:
             value = int(value) / 100
             arg = f"{options}={value}"
 
-            self.outputDict["af"].update({options: arg})
+            self.output_dict["af"].update({options: arg})
             return True
         return
 
-    def setFormat(self, options):
-        value = self.outputDict.get(options, "-")
+    def set_format(self, options):
+        value = self.output_dict.get(options, "-")
         filters = newoutputMap.get(options, None)
         if options in ["video", "audio"]:
             value = "".join(
@@ -248,11 +276,11 @@ class CommandBuilder:
                 ]
             )
             arg = f"{filters} {value}"
-            self.outputDict.update({options: arg})
+            self.output_dict.update({options: arg})
             return True
         elif data.get(options) is None:
             arg = f"{filters} {value}"
-            self.outputDict.update({options: arg})
+            self.output_dict.update({options: arg})
             return True
         elif options != "clip":
             value = "".join(
@@ -263,26 +291,26 @@ class CommandBuilder:
                 ]
             )
             arg = f"{filters} {value}"
-            self.outputDict.update({options: arg})
+            self.output_dict.update({options: arg})
 
     def build(self):
-        for i in self.outputDict:
-            if self.setVideoFilters(i):
+        for i in self.output_dict:
+            if self.set_video_filters(i):
                 continue
-            elif self.setAudioFilters(i):
+            elif self.set_audio_filters(i):
                 continue
             else:
-                self.setFormat(i)
+                self.set_format(i)
         lst_extra, vf, af = ([] for _ in range(3))
-        for val in self.outputDict:
+        for val in self.output_dict:
             if val == "vf":
-                vf = self.outputDict.get(val).values()
+                vf = self.output_dict.get(val).values()
                 vf = ",".join(list(vf))
             elif val == "af":
-                af = self.outputDict.get(val).values()
+                af = self.output_dict.get(val).values()
                 af = ",".join(list(af))
             else:
-                lst_extra.append(self.outputDict.get(val))
+                lst_extra.append(self.output_dict.get(val))
         # print(lst_extra, "temp x")
         # if vf:self.vf=f"-vf '{vf}'"
         # if af:self.af=f"-af '{af}'"
@@ -291,25 +319,25 @@ class CommandBuilder:
         self.extra = " ".join(lst_extra)
         self.commands = f"{self.vf} {self.af} {self.extra}"
 
-    def startfunc(self, input: gr.components.Component, c_label="", newValue=""):
+    def startfunc(self, component: gr.components.Component, new_value=""):
         label, *_ = (
-            input.label.strip(": ").lower().split()
-            if not isinstance(input.label, list)
-            else "".join(input.label).strip(": ").lower().split()
+            component.label.strip(": ").lower().split()
+            if not isinstance(component.label, list)
+            else "".join(component.label).strip(": ").lower().split()
         )
         label += "".join(_).title()
-        if newValue not in [None, "Source", "Auto", "", "None", 0]:
-            self.outputDict["vf"].update({label: newValue})
-            self.outputDict["af"].update({label: newValue})
-            self.outputDict.update({label: newValue})
+        if new_value not in [None, "Source", "Auto", "", "None", 0]:
+            self.output_dict["vf"].update({label: new_value})
+            self.output_dict["af"].update({label: new_value})
+            self.output_dict.update({label: new_value})
         else:
-            self.outputDict.pop(label, "No Key Exists")
-            self.outputDict["vf"].pop(label, "No Key Exists")
-            self.outputDict["af"].pop(label, "No Key Exists")
+            self.output_dict.pop(label, "No Key Exists")
+            self.output_dict["vf"].pop(label, "No Key Exists")
+            self.output_dict["af"].pop(label, "No Key Exists")
             # self.formatOutputDict["vf"].pop(label, "Key is None or similar")
             # self.formatOutputDict["af"].pop(label, "Key is None or similar")
             # self.formatOutputDict.pop(label, "Key is None or similar")
-        print(self.outputDict)
+        print(self.output_dict)
         self.build()
 
 
@@ -341,7 +369,7 @@ class CommandBuilder:
 #         return [no_,no_]
 
 
-def mediaChange(option: str, state) -> List[Component]:
+def media_change(option: str, state) -> List[Component]:
     """
         Allows playing the media in various options,
         Video, Audio or File
@@ -353,11 +381,11 @@ def mediaChange(option: str, state) -> List[Component]:
         List[Component]: list of toggled output components to display
     """
     print(state, "state")
-    ops = {"Audio": gr.update(visible=True, value=state)}
-    ops2 = {"Video": gr.update(visible=True, value=state)}
-    ops3 = {"File": gr.update(visible=True, value=state, interactive=False)}
+    ops = {"Audio": gr.Audio(visible=True, value=state)}
+    ops2 = {"Video": gr.Video(visible=True, value=state)}
+    ops3 = {"File": gr.File(visible=True, value=state, interactive=False)}
 
-    def chosen(x):
+    def chosen(x: dict) -> Component:
         return x.get(option, gr.update(visible=False))
 
     return [chosen(ops), chosen(ops2), chosen(ops3)]
@@ -391,7 +419,7 @@ def mediaChange(option: str, state) -> List[Component]:
 #     return clear_func(input)
 
 
-def customBitrate(choice: int) -> Component:
+def set_custom_bitrate(choice: int) -> Component:
     """
         Toggle a component for custom Audio Quality
         visible/none
@@ -402,12 +430,11 @@ def customBitrate(choice: int) -> Component:
         Component: component toggle state
     """
     if choice == "Custom":
-        return gr.update(visible=True)
-    else:
-        return gr.update(visible=False, value=0)
+        return gr.Number(visible=True)
+    return gr.Number(visible=False, value=0)
 
 
-def supported_codecs(format: str) -> List[Component]:
+def supported_codecs(codec: str) -> List[Component]:
     """
         Changes video and audio components with appropriate
         options according to passed format
@@ -418,38 +445,38 @@ def supported_codecs(format: str) -> List[Component]:
     Returns:
         List[Component]: list of components with updated choices
     """
-    if format:
-        format = format.lower()
+    if codec:
+        codec = codec.lower()
     video_lst = [
         val.get("value")
         for val in data["codecs"]["video"]
-        if val.get("supported") is None or format in val["supported"]
+        if val.get("supported") is None or codec in val["supported"]
     ]
     audio_lst = [
         val.get("value")
         for val in data["codecs"]["audio"]
-        if val.get("supported") is None or format in val["supported"]
+        if val.get("supported") is None or codec in val["supported"]
     ]
     return [gr.Dropdown(choices=video_lst), gr.Dropdown(choices=audio_lst)]
 
 
-def supported_presets(format: str) -> Component:
+def supported_presets(preset: str) -> Component:
     """
         Changes presets component with appropriate
         options according to passed format
     Args:
-        format: passed media codec (x264,x265)
+        format: passed media codec (slow,fast,ultrafast)
 
     Returns:
         Component: component with updated choice list (video codecs)
     """
-    if format:
-        format = format.lower()
-    print(format, "preset")
+    if preset:
+        preset = preset.lower()
+    print(preset, "preset")
     video_lst = [
         val.get("name")
         for val in data["presets"]
-        if val.get("supported") is None or format in val["supported"]
+        if val.get("supported") is None or preset in val["supported"]
     ]
     return gr.Dropdown(choices=video_lst)
 
@@ -515,24 +542,25 @@ class Clear(CommandBuilder):
     def __repr__(self):
         return self._component
 
-    def __init__(self, *input_component: gr.Blocks) -> None:
+    def __init__(self, *input_component: gr.Row | gr.Column) -> None:
         """
         Parameters:
             *input_component: A tuple of layout blocks containing components
         """
+        super().__init__(*input_component)
         self._component = []
         if input_component is not None:
             for i in input_component:
                 # self._component += super()._get_component_instance(i)
                 self._component += self.__get_component_instance(i)
 
-    def __get_component_instance(self, inputs: gr.Blocks) -> list:
+    def __get_component_instance(self, inputs: gr.Row | gr.Column) -> list:
         # print(inputs, " class instance")
         res = []
         # print(*inputs.children)
         for i in inputs.children:
             # print(i,hasattr(i,"children"))
-            if not (hasattr(i, "children")):
+            if not hasattr(i, "children"):
                 # res.append(gr.components.get_component_instance(i,render=True))
                 res += [gr.components.get_component_instance(i, render=True)]
                 # print(i)

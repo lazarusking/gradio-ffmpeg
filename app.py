@@ -15,14 +15,14 @@ from functions import (
     audio_sample_rates,
     change_clipbox,
     containers,
-    customBitrate,
-    mediaChange,
+    set_custom_bitrate,
+    media_change,
     presets,
     supported_codecs,
     supported_presets,
     video_codecs,
     video_containers,
-    vf,
+    VF,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -31,17 +31,17 @@ logging.basicConfig(level=logging.INFO)
 logging.info(msg=f"{video_containers}")
 
 
-def convert(file: _TemporaryFileWrapper, options: str, state):
+def convert(file: _TemporaryFileWrapper, container_format: str, new_state: str):
     stderr = ""
     # stdout=""
     output_file = ""
     # video = ""
     ffmpeg = FFmpeg()
     try:
-        logging.info(f"File name: {file.name}")
+        logging.info("File name: %s", file.name)
         new_name, _ = file.name.split(".")
-        logging.info(f"New filename:{new_name}")
-        output_file = f"{new_name}1.{options.lower()}"
+        logging.info("New filename:%s", new_name)
+        output_file = f"{new_name}1.{container_format.lower()}"
         ffmpeg = FFmpeg(
             inputs={file.name: None},
             outputs={output_file: ffmpeg_commands.commands.split()},
@@ -58,11 +58,11 @@ def convert(file: _TemporaryFileWrapper, options: str, state):
     except Exception as e:
         stderr = e
         output = f"{stderr}"
-        return [None, None, None, output]
+        return [None, None, None, output, new_state]
 
-    state = output_file
+    new_state = output_file
 
-    return [output_file, output_file, output_file, output, state]
+    return [output_file, output_file, output_file, output, new_state]
 
 
 with gr.Blocks(css="./styles.css") as demo:
@@ -87,7 +87,10 @@ with gr.Blocks(css="./styles.css") as demo:
                             interactive=True,
                         )
                         stop_time = gr.Textbox(
-                            label="Stop Time:", placeholder="00:00", visible=False
+                            label="Stop Time:",
+                            placeholder="00:00",
+                            visible=False,
+                            interactive=True,
                         )
                 with gr.Row():
                     clearBtn = gr.Button("Clear")
@@ -110,11 +113,9 @@ with gr.Blocks(css="./styles.css") as demo:
 
             resetFormat = Clear(inputs, inputs_clip)
             print(inputs_clip.children)
-            print(resetFormat)
+            # print(resetFormat)
             state = gr.State()
-            clearBtn.click(
-                resetFormat.clear, inputs=resetFormat(), outputs=resetFormat()
-            )
+            clearBtn.click(resetFormat.clear, resetFormat(), resetFormat())
             convertBtn.click(
                 convert,
                 inputs=[file_input, options, state],
@@ -139,8 +140,8 @@ with gr.Blocks(css="./styles.css") as demo:
         with gr.Row(elem_id="button"):
             with gr.Column():
                 clearBtn = gr.Button("Clear")
-        videoReset = Clear(video_inputs)
-        clearBtn.click(videoReset.clear, videoReset(), videoReset())
+            videoReset = Clear(video_inputs)
+            clearBtn.click(videoReset.clear, videoReset(), videoReset())
 
     with gr.Tab("Audio"):
         with gr.Row() as audio_inputs:
@@ -174,12 +175,14 @@ with gr.Blocks(css="./styles.css") as demo:
         gr.Markdown("## Video")
         # equal_height=True
         with gr.Row(equal_height=True) as filter_inputs:
-            for i in vf:
+            for i in VF:
                 # print(i.values())
                 # values = list(i.values())
                 values = list(i.values())[0]
                 choices = [j for lst in values for j in [lst.get("name")]]
-                a = gr.Dropdown(label=list(i.keys()), choices=choices, value=choices[0])
+                a = gr.Dropdown(
+                    label=str(list(i.keys())[0]), choices=choices, value=choices[0]
+                )
         gr.Markdown("## Audio")
         with gr.Row(elem_id="acontrast") as filter_inputs_1:
             acontrastSlider = gr.Slider(label="Acontrast", elem_id="acontrast")
@@ -194,11 +197,11 @@ with gr.Blocks(css="./styles.css") as demo:
     ffmpeg_commands = CommandBuilder(
         inputs_clip, video_inputs, audio_inputs, filter_inputs, filter_inputs_1
     )
-    # ffmpeg_commands.do()
+    ffmpeg_commands.do()
 
     # demo.load(fn=ffmpeg_commands.reset, inputs=[], outputs=[])
     clip.change(fn=change_clipbox, inputs=clip, outputs=[start_time, stop_time])
-    pprint(ffmpeg_commands.commands)
+    # pprint(ffmpeg_commands.commands)
     ffmpeg_commands.update(output_textbox)
     # file_input.change(fn=updateOutput,inputs=file_input,outputs=output_textbox)
 
@@ -206,25 +209,25 @@ with gr.Blocks(css="./styles.css") as demo:
     # options.change(mediaChange,[options],[media_output_audio,media_output_video])
     # video_button.click(fn=videoChange,inputs=media_output_file,outputs=media_output_video)
     audio_button.click(
-        mediaChange,
+        media_change,
         [audio_button, state],
         [media_output_audio, media_output_video, media_output_file],
     )
     video_button.click(
-        mediaChange,
+        media_change,
         [video_button, state],
         [media_output_audio, media_output_video, media_output_file],
     )
     # media_output_audio.change(lambda x:gr.update(value=x),[media_output_audio],[media_output_video])
     file_button.click(
-        mediaChange,
+        media_change,
         [file_button, state],
         [media_output_audio, media_output_video, media_output_file],
     )
     """Video Tab change functions"""
     video_options.change(supported_presets, [video_options], [preset_options])
     """Audio Tab change functions"""
-    audio_bitrate.change(customBitrate, [audio_bitrate], [custom_bitrate])
+    audio_bitrate.change(set_custom_bitrate, [audio_bitrate], [custom_bitrate])
 
 if __name__ == "__main__":
     demo.launch(debug=True)
