@@ -107,7 +107,6 @@ class CommandBuilder:
         # comp.change(fn=self.changefunc, inputs=[state, comp], outputs=[])
 
     def changefunc(self, component_label: str | None, new_value=""):
-        print(component_label, "typaaaaaaaa", new_value)
         label, *_ = (
             component_label.strip(": \n").lower().split()
             if component_label
@@ -141,8 +140,7 @@ class CommandBuilder:
         self.extra = " ".join(lst_extra)
         self.commands = f"{self.vf} {self.af} {self.extra}"
 
-        print(label, self.vf, self.af, self.extra)
-        print(self.output_dict, "out")
+        print(self.vf, self.af, self.extra)
 
     def set_vf(self, label: str, new_value: "str| int"):
         """Sets Video filters

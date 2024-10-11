@@ -65,9 +65,12 @@ def convert(file: _TemporaryFileWrapper, container_format: str, new_state: str):
     return [output_file, output_file, output_file, output, new_state]
 
 
-with gr.Blocks(css="./styles.css") as demo:
+with gr.Blocks(
+    css="./styles.css",
+    theme=gr.themes.Default(primary_hue=gr.themes.colors.amber),
+) as demo:
     # with gr.Tabs():
-    with gr.Tab("Format"):
+    with gr.Tab("Format", id="format"):
         # Input Buttons
         with gr.Row():
             with gr.Column() as inputs:
@@ -128,7 +131,7 @@ with gr.Blocks(css="./styles.css") as demo:
                 ],
             )
 
-    with gr.Tab("Video"):
+    with gr.Tab("Video", id="video"):
         with gr.Row() as video_inputs:
             video_options = gr.Dropdown(
                 label="video", choices=video_codecs, value=video_codecs[-1]
@@ -143,7 +146,7 @@ with gr.Blocks(css="./styles.css") as demo:
             videoReset = Clear(video_inputs)
             clearBtn.click(videoReset.clear, videoReset(), videoReset())
 
-    with gr.Tab("Audio"):
+    with gr.Tab("Audio", id="audio"):
         with gr.Row() as audio_inputs:
             # print(names[0])
             audio_options = gr.Dropdown(
@@ -171,7 +174,7 @@ with gr.Blocks(css="./styles.css") as demo:
         audioReset = Clear(audio_inputs)
         clearBtn.click(audioReset.clear, audioReset(), audioReset())
 
-    with gr.Tab("Filters") as filter_inputs:
+    with gr.Tab("Filters", id="filters") as filter_inputs:
         gr.Markdown("## Video")
         # equal_height=True
         with gr.Row(equal_height=True) as filter_inputs:
