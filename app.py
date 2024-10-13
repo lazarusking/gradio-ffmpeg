@@ -122,12 +122,15 @@ with gr.Blocks(
                         audio_button = gr.Button("Audio")
                         file_button = gr.Button("File")
                     media_output_audio = gr.Audio(
-                        type="filepath", label="Output", visible=True, interactive=False
+                        type="filepath",
+                        label="Audio",
+                        visible=False,
+                        interactive=False,
                     )
                     media_output_video = gr.Video(
-                        label="Output", visible=False, height=300
+                        label="Video", visible=True, height=300
                     )
-                    media_output_file = gr.File(label="Output", visible=False)
+                    media_output_file = gr.File(label="File", visible=False)
                     with gr.Row() as command_output:
                         output_textbox = gr.Code(
                             value="$ echo 'Hello, World!'",
@@ -250,9 +253,9 @@ with gr.Blocks(
     ffmpeg_commands = CommandBuilder(
         inputs_clip, video_inputs, audio_inputs, filter_inputs, filter_inputs_1
     )
-    ffmpeg_commands.do()
+    ffmpeg_commands.setup_listener()
     # pprint(ffmpeg_commands.commands)
     ffmpeg_commands.update(output_textbox)
 
 if __name__ == "__main__":
-    demo.launch(show_error=True)
+    demo.launch(show_error=True, max_threads=300)
