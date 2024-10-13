@@ -69,9 +69,8 @@ class CommandBuilder:
                 #     comp.label,
                 #     comp,
                 # )
-                comp.change(
-                    fn=self.changefunc, inputs=[gr.State(comp.label), comp], outputs=[]
-                )
+                state = gr.State(value=comp.label)
+                comp.change(fn=self.changefunc, inputs=[state, comp], outputs=[])
 
     def reset(self):
         self.output_dict = {"vf": {}, "af": {}}
@@ -115,7 +114,7 @@ class CommandBuilder:
             else "".join(component_label).strip(": ").lower().split()
         )
         label += "".join(_).title()
-        key = newoutputMap.get(label)
+        key = newoutputMap.get(label, "")
         lst_extra, vf, af = ([] for _ in range(3))
         if new_value not in [None, "Source", "Auto", "", "None", "none", 0]:
             self.set_vf(label, new_value)
@@ -138,7 +137,8 @@ class CommandBuilder:
         self.vf = f"-vf '{vf}'" if vf else ""
         self.af = f"-af '{af}'" if af else ""
         self.extra = " ".join(lst_extra)
-        self.commands = f"{self.vf} {self.af} {self.extra}"
+        self.commands = " ".join(f"{self.vf} {self.af} {self.extra}".strip().split())
+        # self.commands = " ".join(filter(None, [self.vf, self.af, self.extra]))
 
         print(self.vf, self.af, self.extra)
 
@@ -158,14 +158,14 @@ class CommandBuilder:
             else:
                 self.output_dict["vf"].update({key: key})
 
-    def set_f(self, label, new_value):
+    def set_f(self, label: str, new_value: "str| int"):
         """Sets Extra filters
         Args:
             label : label of components
             newValue : value of component
         """
         if newoutputMap.get(label):
-            key = newoutputMap.get(label)
+            key = newoutputMap.get(label, "")
             if label in ["video", "audio"]:
                 codec_label = codecs.get(label)
                 value = (
@@ -179,7 +179,7 @@ class CommandBuilder:
                 value = "".join(
                     [
                         i.get("value", "None")
-                        for i in data.get(label)
+                        for i in data.get(label, [])
                         if i.get("name", None) == new_value
                     ]
                 )
@@ -200,11 +200,10 @@ class CommandBuilder:
         for comp in self._component:
             # print(comp, "comp")
             comp.change(
-                lambda: gr.Textbox(value=self.output_dict),
+                lambda: gr.update(value=f"$ {self.commands}"),
                 [],
                 [component],
-                trigger_mode="once",
-            )
+            ).then(lambda: gr.update(value=f"$ {self.commands}"), [], [component])
 
     def _get_component_instance(self, inputs: gr.Row | gr.Column) -> List[Component]:
         """
@@ -228,7 +227,8 @@ class CommandBuilder:
                 # print(gr.components.get_component_instance(i, render=True))
                 res += [gr.components.get_component_instance(i, render=True)]
             # print(res)
-            elif hasattr(i, "children"):
+            # elif hasattr(i, "children"):
+            else:
                 # if isinstance(i, gr.Blocks):
                 res += self._get_component_instance(i)
         # print(res)
@@ -508,10 +508,10 @@ def change_clipbox(choice: str) -> List[Component]:
         ]
 
 
-def updateOutput(file: _TemporaryFileWrapper) -> Component:
-    if file:
-        print(file.name)
-        return gr.update(value=file.name)
+# def updateOutput(file: _TemporaryFileWrapper) -> Component:
+#     if file:
+#         print(file.name)
+#         return gr.update(value=file.name)
 
 
 def get_component_instance(inputs: gr.Blocks) -> List[Component]:
@@ -536,9 +536,6 @@ class Clear(CommandBuilder):
 
     def __str__(self):
         return f"{self._component} __clear__ class"
-
-    def __repr__(self):
-        return self._component
 
     def __init__(self, *input_component: gr.Row | gr.Column) -> None:
         """
