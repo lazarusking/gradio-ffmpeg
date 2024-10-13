@@ -1,9 +1,15 @@
 #outputtext {
   color: green;
 }
+
 #acontrast {
   width: 50%;
 }
-#button{
+
+#button {
   width: 30%
+}
+
+body {
+  background: var(--body-background-fill);
 }

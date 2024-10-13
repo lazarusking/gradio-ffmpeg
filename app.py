@@ -68,8 +68,14 @@ def convert(file: _TemporaryFileWrapper, container_format: str, new_state: str):
     return [output_file, output_file, output_file, ffmpeg_wo.cmd, new_state]
 
 
+css = """
+body {
+  background: var(--body-background-fill);
+}
+"""
+
 with gr.Blocks(
-    css="./styles.css",
+    css=css,
     theme=gr.themes.Soft(
         primary_hue=gr.themes.colors.green,
         secondary_hue=gr.themes.colors.amber,
@@ -78,7 +84,7 @@ with gr.Blocks(
         # font=["ui-sans-serif", "system-ui", "sans-serif"],
     ),
 ) as demo:
-    with gr.Tabs(selected="format"):
+    with gr.Tabs(selected="format", elem_classes="tabs"):
         with gr.Tab("Format", id="format"):
             # Input Buttons
             with gr.Row():
