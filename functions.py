@@ -203,7 +203,7 @@ class CommandBuilder:
                 lambda: gr.update(value=f"$ {self.commands}"),
                 [],
                 [component],
-            ).then(lambda: gr.update(value=f"$ {self.commands}"), [], [component])
+            )
 
     def _get_component_instance(self, inputs: gr.Row | gr.Column) -> List[Component]:
         """
